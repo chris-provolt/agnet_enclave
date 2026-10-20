@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Enclave - runs{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Start a run</h1>
+  <p class="muted">Mode: <strong>{{ settings.llm_mode }}</strong>, model {{ settings.llm_model }}, budget cap ${{ '%.2f' % settings.max_run_usd }} per run, {{ settings.scout_briefs }} scout briefs, {{ settings.finalists }} finalists.</p>
+  <form method="post" action="/runs" class="row">
+    <input type="text" name="note" placeholder="Optional note for this run (e.g. focus on data products)" {% if active %}disabled{% endif %}>
+    <button type="submit" {% if active %}disabled title="A run is already active"{% endif %}>Start run</button>
+    {% if active %}
+      <button formaction="/runs/{{ active.run_id }}/cancel" formmethod="post" class="danger">Cancel active run</button>
+    {% endif %}
+  </form>
+</section>
+
+<section class="card">
+  <h2>Runs</h2>
+  {% if not runs %}<p class="muted">No runs yet.</p>{% endif %}
+  {% if runs %}
+  <table>
+    <thead><tr><th>Run</th><th>Status</th><th>Started</th><th>Finished</th><th>Cost</th><th>Events</th><th>Decision</th><th></th></tr></thead>
+    <tbody>
+    {% for r in runs %}
+      <tr>
+        <td><a href="/runs/{{ r.run_id }}">{{ r.run_id }}</a></td>
+        <td><span class="status status-{{ r.status }}">{{ r.status }}</span></td>
+        <td>{{ r.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ r.finished_at.strftime('%Y-%m-%d %H:%M:%S') if r.finished_at else '-' }}</td>
+        <td>${{ '%.2f' % r.cost_usd }}</td>
+        <td>{{ r.event_count }}</td>
+        <td>{{ r.decision or '-' }}</td>
+        <td><a href="/runs/{{ r.run_id }}/player">Replay</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+{% endblock %}

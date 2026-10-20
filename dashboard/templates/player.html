@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Replay {{ run.run_id }}{% endblock %}
+{% block bodyattrs %}data-run-id="{{ run.run_id }}" data-run-status="{{ run.status }}"{% endblock %}
+{% block content %}
+<section class="card player-head">
+  <h1>Timeline: <a href="/runs/{{ run.run_id }}">{{ run.run_id }}</a> <span class="status status-{{ run.status }}">{{ run.status }}</span></h1>
+  <div class="controls">
+    <button id="btn-play">Play</button>
+    <button id="btn-step">Step</button>
+    <button id="btn-end">Show all</button>
+    <button id="btn-reset">Reset</button>
+    <label>Speed
+      <select id="speed">
+        <option value="1">1x</option>
+        <option value="5">5x</option>
+        <option value="20" selected>20x</option>
+        <option value="100">100x</option>
+      </select>
+    </label>
+    <span id="clock" class="clock">-</span>
+    <span id="progress" class="muted"></span>
+    <span id="live" class="live hidden">LIVE</span>
+  </div>
+  <input type="range" id="scrub" min="0" max="0" value="0">
+  <div class="filters">
+    <div id="agent-filters" class="filter-group"><strong>Agents</strong></div>
+    <div id="kind-filters" class="filter-group"><strong>Kinds</strong></div>
+  </div>
+</section>
+<section id="timeline" class="timeline"></section>
+{% endblock %}
+{% block scripts %}<script src="/static/player.js"></script>{% endblock %}

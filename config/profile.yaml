@@ -1,0 +1,92 @@
+# Ground truth for every run. Two halves:
+#   operator  - the human's constraints: money, time, jurisdiction, risk. The
+#               operator approves, funds, and handles anything that needs a
+#               real person. They are NOT the labour.
+#   workforce - what the AI agent team can build and run on its own. Fit is
+#               judged against THESE capabilities, not the operator's skills.
+# Read at the start of every run; edit freely, no restart needed.
+
+operator:
+  display_name: "Operator"
+  timezone: "America/Denver"
+  jurisdiction: "United States"
+  role: "Approver and funder. Reviews reports, signs up for accounts, handles identity checks and payments, pulls the plug."
+  capital:
+    available_usd: 5000          # total at risk across everything
+    max_per_opportunity_usd: 2000
+    monthly_burn_tolerance_usd: 300   # recurring API, hosting, and tool spend the operator will carry
+  time:
+    oversight_hours_per_week: 2  # reviewing output, approving, handling account tasks
+    hard_limit_hours_per_week: 4 # never propose something that needs more human time than this
+  risk:
+    tolerance: medium            # low | medium | high
+    must_be_legal_in_jurisdiction: true
+    must_respect_platform_terms: true   # no bot-farming, fake engagement, or ToS-violating automation
+    disclose_ai_generation_where_required: true
+
+workforce:
+  description: >
+    A team of autonomous Claude agents running 24/7 in Docker. They research,
+    write, code, generate media through APIs, publish through APIs, monitor
+    results, and iterate. Anything that can be done through an API or a
+    headless browser is in scope. Anything that needs a human body, face,
+    voice, identity, or signature is the operator's job and counts against
+    their hours.
+  can_do:
+    - Long-form and short-form writing (articles, scripts, newsletters, ebooks, product copy, SEO content)
+    - Software: Python services, APIs, bots, scrapers, data pipelines, Docker deployments, small web apps
+    - AI-generated media via APIs: images, voiceover, music, short-form video, thumbnails, captions
+    - Video assembly and editing pipelines (ffmpeg, templated edits, auto-captioning)
+    - Publishing and scheduling through platform APIs (YouTube, TikTok, Instagram, X, Pinterest, Medium, Substack, Gumroad, Etsy, Amazon KDP, app stores)
+    - Research, competitive analysis, trend monitoring, keyword and niche discovery
+    - Data products: cleaning, enrichment, dashboards, paid datasets, metered APIs
+    - Marketplace and listing automation (templates, digital downloads, print-on-demand designs)
+    - Customer support via email or chat, FAQ bots, review responses
+    - Analytics loops: measure, A/B test, kill losers, scale winners
+  cannot_do:
+    - Appear on camera or record a human voice (synthetic voice is fine)
+    - Pass identity verification, KYC, or open accounts (operator does this once)
+    - Handle physical goods, inventory, or shipping directly
+    - Make phone calls or attend meetings
+    - Spend money without an approved budget line
+  available_infrastructure:
+    - Anthropic API (Claude) for reasoning and writing
+    - Image, voice, music, and video generation APIs (operator will provision on approval)
+    - Docker host with persistent storage and scheduled jobs
+    - Postgres and Redis
+    - Headless browser automation
+    - Stripe for payments
+  existing_assets:
+    - Market data and sentiment pipelines (price history, news, whale tracking) that can be repackaged
+    - Hardened Docker Compose stacks for monitoring, auth, and backups
+    - Discord bot framework
+
+preferences:
+  prefer_categories:
+    - AI-generated short-form video channels (faceless YouTube Shorts, TikTok, Reels) monetised by ads, affiliates, or sponsorships
+    - Faceless long-form YouTube channels with synthetic voice and generated visuals
+    - AI-written niche newsletters and content sites with ads, affiliates, or paid tiers
+    - Digital products: ebooks, templates, prompt packs, courses sold on marketplaces
+    - Print-on-demand with AI-generated designs
+    - Software and SaaS micro-products, APIs, and data products
+    - Automated marketplace or affiliate sites
+  exclude_categories:
+    - Multi-level marketing
+    - Gambling or betting systems
+    - Anything requiring a physical storefront or managing inventory
+    - Engagement farming, fake reviews, bot followers, or anything that violates platform terms
+    - Impersonating real people or brands
+  exclude_keywords:
+    - crypto airdrop
+    - get rich quick
+  time_to_first_dollar_max_days: 120
+  min_monthly_income_target_usd: 300
+  scoring_hint: >
+    Weight autonomy heavily: the best opportunities need the operator for
+    account setup and approvals only. Penalise anything where human hours per
+    week would exceed the oversight budget. Treat API and tooling spend as a
+    recurring cost against monthly_burn_tolerance_usd.
+
+report:
+  finalists: 5
+  language: en

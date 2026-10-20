@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Enclave{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body {% block bodyattrs %}{% endblock %}>
+  <header class="top">
+    <a class="brand" href="/">Enclave</a>
+    <nav>
+      <a href="/">Runs</a>
+    </nav>
+    {% if active %}
+      <span class="active-pill">Active run <a href="/runs/{{ active.run_id }}/player">{{ active.run_id }}</a>: {{ active.stage }} ({{ active.pending }} pending, ${{ '%.2f' % active.cost_usd }})</span>
+    {% endif %}
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

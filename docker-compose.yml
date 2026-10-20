@@ -1,0 +1,134 @@
+name: enclave
+
+x-python-service: &python-service
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  image: enclave/service:local
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  environment: &common-env
+    REDIS_URL: redis://:${REDIS_PASSWORD:-change-me-redis}@redis:6379/0
+    POSTGRES_DSN: postgresql://${POSTGRES_USER:-enclave}:${POSTGRES_PASSWORD:-change-me-postgres}@postgres:5432/${POSTGRES_DB:-enclave}
+    LLM_MODE: ${LLM_MODE:-mock}
+    LLM_MODEL: ${LLM_MODEL:-claude-opus-5-5}
+    LLM_EFFORT: ${LLM_EFFORT:-high}
+    LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-16000}
+    ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    MAX_RUN_USD: ${MAX_RUN_USD:-5}
+    SCOUT_BRIEFS: ${SCOUT_BRIEFS:-4}
+    FINALISTS: ${FINALISTS:-5}
+    MAX_REVISION_ROUNDS: ${MAX_REVISION_ROUNDS:-2}
+    STAGE_TIMEOUT_S: ${STAGE_TIMEOUT_S:-1800}
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    TZ: ${TZ:-UTC}
+    HEALTH_PORT: "8000"
+    PROFILE_PATH: /app/config/profile.yaml
+    PROMPTS_DIR: /app/config/prompts
+  volumes:
+    - ./config:/app/config:ro
+  depends_on:
+    redis:
+      condition: service_healthy
+
+x-agent: &agent
+  <<: *python-service
+  command: ["python", "-m", "agents.main"]
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-change-me-redis}"]
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change-me-redis}
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-enclave}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-enclave}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  coordinator:
+    <<: *agent
+    environment:
+      <<: *common-env
+      AGENT_ROLE: coordinator
+
+  scout:
+    <<: *agent
+    deploy:
+      replicas: ${SCOUT_REPLICAS:-2}
+    environment:
+      <<: *common-env
+      AGENT_ROLE: scout
+
+  analyst:
+    <<: *agent
+    environment:
+      <<: *common-env
+      AGENT_ROLE: analyst
+
+  planner:
+    <<: *agent
+    environment:
+      <<: *common-env
+      AGENT_ROLE: planner
+
+  critic:
+    <<: *agent
+    environment:
+      <<: *common-env
+      AGENT_ROLE: critic
+
+  reporter:
+    <<: *agent
+    environment:
+      <<: *common-env
+      AGENT_ROLE: reporter
+
+  recorder:
+    <<: *python-service
+    command: ["python", "-m", "recorder.main"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  dashboard:
+    <<: *python-service
+    command: ["python", "-m", "uvicorn", "dashboard.main:app", "--host", "0.0.0.0", "--port", "8080"]
+    ports:
+      - "${DASHBOARD_PORT:-8080}:8080"
+    environment:
+      <<: *common-env
+      HEALTH_PORT: "8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+volumes:
+  redis_data:
+  postgres_data:

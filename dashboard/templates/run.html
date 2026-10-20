@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Run {{ run.run_id }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Run {{ run.run_id }} <span class="status status-{{ run.status }}">{{ run.status }}</span></h1>
+  <p class="muted">Started {{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') }}{% if run.finished_at %}, finished {{ run.finished_at.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}. Claude spend ${{ '%.4f' % run.cost_usd }}.{% if run.summary %} {{ run.summary }}{% endif %}</p>
+  <p>
+    <a class="button" href="/runs/{{ run.run_id }}/player">Open timeline player</a>
+    {% if report %}<a class="button" href="/api/runs/{{ run.run_id }}/report.md">Download report.md</a>{% endif %}
+  </p>
+  <div class="row stats">
+    <div><strong>Events by agent</strong><ul>{% for a in agents %}<li>{{ a.sender }}: {{ a.n }}</li>{% endfor %}</ul></div>
+    <div><strong>Events by kind</strong><ul>{% for k in kinds %}<li>{{ k.kind }}: {{ k.n }}</li>{% endfor %}</ul></div>
+    <div><strong>Artifacts</strong><ul>{% for a in artifacts %}<li><a href="/api/runs/{{ run.run_id }}/artifacts/{{ a.id }}">{{ a.artifact_type }}: {{ a.name }}</a></li>{% endfor %}</ul></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Decision</h2>
+  {% if approvals %}
+    <ul>{% for a in approvals %}<li><strong>{{ a.decision }}</strong> at {{ a.decided_at.strftime('%Y-%m-%d %H:%M:%S') }}{% if a.notes %}: {{ a.notes }}{% endif %}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if report %}
+  <form method="post" action="/runs/{{ run.run_id }}/decision">
+    <textarea name="notes" rows="3" placeholder="Notes for the record (optional)"></textarea>
+    <div class="row">
+      <button name="decision" value="approve" class="ok">Approve</button>
+      <button name="decision" value="request_changes">Request changes</button>
+      <button name="decision" value="reject" class="danger">Reject</button>
+    </div>
+    <p class="muted">Version 1 records the decision only. Nothing is executed.</p>
+  </form>
+  {% else %}
+    <p class="muted">No report yet. {% if run.status == 'running' %}The run is still in progress; watch it in the player.{% endif %}</p>
+  {% endif %}
+</section>
+
+{% if report %}
+<section class="card report">
+  <h2>{{ report.content.title }}</h2>
+  <p class="muted">Report artifact {{ report.event_id }} at {{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+  <div class="markdown">{{ report_html | safe }}</div>
+</section>
+{% endif %}
+{% endblock %}
